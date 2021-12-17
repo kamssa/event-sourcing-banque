@@ -5,6 +5,8 @@ import java.util.concurrent.CompletableFuture;
 
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +20,7 @@ import ci.kamsa.banque.query.queries.GetCompteByIdQuery;
 import ci.kamsa.banque.query.queries.GetCompteHistoryQuery;
 import ci.kamsa.banque.query.queries.GetCompteOperationsQuery;
 import lombok.AllArgsConstructor;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping(path = "/query/compte/")
@@ -43,5 +46,16 @@ public class CompteQueryRestAPI {
 			new GetCompteHistoryQuery(compteId), 
 				ResponseTypes.instanceOf(CompteHistoriqueDTO.class));
 	return query;
+	}
+	/**
+	  SSE: Server Sent Event
+	 **/
+	@GetMapping(path = "{compteId}/watch", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<CompteDTO> subscribeToCompte(@PathVariable String compteId){
+	 SubscriptionQueryResult<CompteDTO, CompteDTO> result =  gateway.subscriptionQuery(
+	    		new GetCompteByIdQuery(compteId),
+	    		ResponseTypes.instanceOf(CompteDTO.class), 
+	    		ResponseTypes.instanceOf(CompteDTO.class));	
+	 return result.initialResult().concatWith(result.updates());
 	}
 }

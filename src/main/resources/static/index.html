@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Digital Bank </title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script>
+   <script>
+   var chart; var data; var options; var compteId;
+   function initChart(){
+	compteId= document.getElementById("compteId").value;
+	
+	data= {
+		labels:[],
+		datasets:[
+		{
+			label:'Solde',
+			backgroundColor:["#c45850"],
+			data:[]
+		}
+		]
+	};
+	options ={
+		responsive: false,
+		legend:{display: true},
+		title:{
+			display: true,
+			text: 'CompteId:'+compteId
+		},
+		scales:{
+			xAxes:[{
+				display: false
+			}]
+		}
+	};
+	chart = new Chart(document.getElementById("myChart"),{
+		type:'line',
+		data: data,
+		options: 'options'
+	});
+	var compteEventSource = new EventSource("query/compte/"+compteId+"/watch");
+	compteEventSource.addEventListener("message", function(event){
+		var compte =JSON.parse(event.data);
+		data.labels.push(new Date().getTime());
+		data.datasets[0].data.push(compte.solde);
+		chart.update();
+	}, false)
+}
+   </script>
+</head>
+<body>
+  <div class="container mt-4">
+  <div class="form-inline">
+  <input size="70" type="text" class="form-control" id="compteId">
+  <button class="btn btn-success ml-4" onclick="initChart()">Subscribe</button>
+  </div>
+  <label id = "CurrentBalance"></label>
+  <div>
+  <canvas id="myChart" width="850" height="400"></canvas>
+  </div>
+  </div>
+</body>
+</html>
